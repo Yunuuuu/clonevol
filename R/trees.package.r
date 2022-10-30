@@ -52,41 +52,46 @@
 #
 # Dec.7,2016: code altered by hdng to allow for germinating tree for clonal evolution
 #
-germinate <- function(x, angle=15, trunk.width=20, middle='0', left='1', right='2',
-                      left2 = '3', right2 = '4', left3 = '5', right3 = '6',
-                      left4 = '7', right4 = '8',
-                      plot=FALSE, ...) {
+germinate <- function(x, angle = 15, trunk.width = 20, middle = "0", left = "1", right = "2",
+                      left2 = "3", right2 = "4", left3 = "5", right3 = "6",
+                      left4 = "7", right4 = "8",
+                      plot = FALSE, ...) {
+    # if(is(x, 'seed')) {
+    trunk.color <- x$branch.colors[1]
+    trunk.node.color <- x$node.colors[1]
+    trunk.node.border.color <- x$node.border.colors[1]
+    trunk.node.border.width <- x$node.border.widths[1]
+    trunk.border.color <- x$branch.border.colors[1]
+    trunk.border.linetype <- x$branch.border.linetypes[1]
+    trunk.border.width <- x$branch.border.widths[1]
+    trunk.node.label <- x$node.labels[1]
+    trunk.node.text <- x$node.texts[1]
+    trunk.text <- x$branch.texts[1]
+    is_founding_clone <- x$branches == "Y"
 
-    #if(is(x, 'seed')) {
-    trunk.color = x$branch.colors[1]
-    trunk.node.color = x$node.colors[1]
-    trunk.node.border.color = x$node.border.colors[1]
-    trunk.node.border.width = x$node.border.widths[1]
-    trunk.border.color = x$branch.border.colors[1]
-    trunk.border.linetype = x$branch.border.linetypes[1]
-    trunk.border.width = x$branch.border.widths[1]
-    trunk.node.label = x$node.labels[1]
-    trunk.node.text = x$node.texts[1]
-    trunk.text = x$branch.texts[1]
-    x <- list(trunk.height=x$length[1],
-              branches=x$branches[-1],
-              lengths=x$lengths[-1],
-              branch.colors=x$branch.colors[-1],
-              branch.border.colors=x$branch.border.colors[-1],
-              branch.border.linetypes=x$branch.border.linetypes[-1],
-              branch.border.widths=x$branch.border.widths[-1],
-              node.colors=x$node.colors[-1],
-              node.border.colors=x$node.border.colors[-1],
-              node.border.widths=x$node.border.widths[-1],
-              node.labels=x$node.labels[-1],
-              node.texts=x$node.texts[-1],
-              branch.texts=x$branch.texts[-1])
-    #}
-    if ('Y' %in% c(left, right))
+    x <- list(
+        trunk.height = x$length[1],
+        branches = x$branches[!is_founding_clone],
+        lengths = x$lengths[!is_founding_clone],
+        branch.colors = x$branch.colors[!is_founding_clone],
+        branch.border.colors = x$branch.border.colors[!is_founding_clone],
+        branch.border.linetypes = x$branch.border.linetypes[!is_founding_clone],
+        branch.border.widths = x$branch.border.widths[!is_founding_clone],
+        node.colors = x$node.colors[!is_founding_clone],
+        node.border.colors = x$node.border.colors[!is_founding_clone],
+        node.border.widths = x$node.border.widths[!is_founding_clone],
+        node.labels = x$node.labels[!is_founding_clone],
+        node.texts = x$node.texts[!is_founding_clone],
+        branch.texts = x$branch.texts[!is_founding_clone]
+    )
+    # }
+    if ("Y" %in% c(left, right)) {
         stop('"Y" is reserved for the trunk.')
-    if (any(nchar(c(left, right))) != 1 | left==right)
-        stop('left and right must be single, distinct alphanumeric characters.')
-    ord = order(x$branches)
+    }
+    if (any(nchar(c(left, right))) != 1 | left == right) {
+        stop("left and right must be single, distinct alphanumeric characters.")
+    }
+    ord <- order(x$branches)
     x$lengths <- x$lengths[ord]
     x$branch.colors <- x$branch.colors[ord]
     x$branch.border.colors <- x$branch.border.colors[ord]
@@ -99,58 +104,63 @@ germinate <- function(x, angle=15, trunk.width=20, middle='0', left='1', right='
     x$node.texts <- x$node.texts[ord]
     x$branch.texts <- x$branch.texts[ord]
     x$branches <- sort(x$branches)
-    x$angles <- sapply(sapply(as.character(x$branches), strsplit, ''), function(x) {
+    x$angles <- sapply(sapply(as.character(x$branches), strsplit, ""), function(x) {
         tab <- table(x)
-        #sum(c(tab[left]*-angle, tab[right]*angle), na.rm=TRUE)
-        sum(c(tab[left]*-angle, tab[right]*angle,
-              tab[left2]*-0.5*angle, tab[right2]*angle*0.5,
-              tab[left3]*-1.5*angle, tab[right3]*angle*1.5,
-              tab[left4]*-2*angle, tab[right4]*angle*2
-        ), na.rm=TRUE)
-    }, USE.NAMES=FALSE)
+        # sum(c(tab[left]*-angle, tab[right]*angle), na.rm=TRUE)
+        sum(c(
+            tab[left] * -angle, tab[right] * angle,
+            tab[left2] * -0.5 * angle, tab[right2] * angle * 0.5,
+            tab[left3] * -1.5 * angle, tab[right3] * angle * 1.5,
+            tab[left4] * -2 * angle, tab[right4] * angle * 2
+        ), na.rm = TRUE)
+    }, USE.NAMES = FALSE)
     y1 <- x1 <- y0 <- x0 <- rep(NA, length(x$branches))
     for (i in seq_len(length(x$branches))) {
-        if(x$branches[i] %in% c(middle, left, right, left2, right2, left3, right3, left4, right4)) {
+        if (x$branches[i] %in% c(middle, left, right, left2, right2, left3, right3, left4, right4)) {
             x0[i] <- 0
             y0[i] <- x$trunk.height
         } else {
-            parent <- substr(x$branches[i], 1, nchar(x$branches[i])-1)
-            if (is.null(parent) || length(parent) == 0){
-                message('\nERROR: Cannot generate tree, probably due to too many branches (max degree of node = 8)\n')
+            parent <- substr(x$branches[i], 1, nchar(x$branches[i]) - 1)
+            if (is.null(parent) || length(parent) == 0) {
+                message("\nERROR: Cannot generate tree, probably due to too many branches (max degree of node = 8)\n")
                 return(NULL)
             }
-            #cat('dbg:', parent, '---', x$branches[i], '\n')
-            x0[i] <- x1[which(x$branches==parent)]
-            y0[i] <- y1[which(x$branches==parent)]
+            # cat('dbg:', parent, '---', x$branches[i], '\n')
+            x0[i] <- x1[which(x$branches == parent)]
+            y0[i] <- y1[which(x$branches == parent)]
         }
         tip <- get.xy(x$angles[i], x$lengths[i], x0[i], y0[i])
         x1[i] <- tip[, 1]
         y1[i] <- tip[, 2]
     }
-    d <- data.frame(branches=x$branches,
-                    depth=ifelse(x$branches=='Y', 0, nchar(x$branches)),
-                    length=x$lengths,
-                    angles=x$angles, x0, y0, x1, y1,
-                    branch.colors=x$branch.colors,
-                    branch.border.colors=x$branch.border.colors,
-                    branch.border.linetypes=x$branch.border.linetypes,
-                    branch.border.widths=x$branch.border.widths,
-                    node.colors=x$node.colors,
-                    node.border.colors=x$node.border.colors,
-                    node.border.widths=x$node.border.widths,
-                    node.labels=x$node.labels,
-                    node.texts=x$node.texts,
-                    branch.texts=x$branch.texts,
-                    stringsAsFactors=FALSE)
+    d <- data.frame(
+        branches = x$branches,
+        depth = ifelse(x$branches == "Y", 0, nchar(x$branches)),
+        length = x$lengths,
+        angles = x$angles, x0, y0, x1, y1,
+        branch.colors = x$branch.colors,
+        branch.border.colors = x$branch.border.colors,
+        branch.border.linetypes = x$branch.border.linetypes,
+        branch.border.widths = x$branch.border.widths,
+        node.colors = x$node.colors,
+        node.border.colors = x$node.border.colors,
+        node.border.widths = x$node.border.widths,
+        node.labels = x$node.labels,
+        node.texts = x$node.texts,
+        branch.texts = x$branch.texts,
+        stringsAsFactors = FALSE
+    )
     d <- rbind(setNames(
-        data.frame('Y', 0, x$trunk.height, 0, 0, 0, 0, x$trunk.height,
-                   trunk.color, trunk.border.color, trunk.border.linetype, trunk.border.width,
-                   trunk.node.color, trunk.node.border.color, trunk.node.border.width,
-                   trunk.node.label, trunk.node.text, trunk.text,
-                   stringsAsFactors=FALSE),
-        names(d)), d)
-    class(d) <- c('plant', 'data.frame')
-    if(isTRUE(plot)) plot(d, trunk.width=trunk.width, ...)
+        data.frame("Y", 0, x$trunk.height, 0, 0, 0, 0, x$trunk.height,
+            trunk.color, trunk.border.color, trunk.border.linetype, trunk.border.width,
+            trunk.node.color, trunk.node.border.color, trunk.node.border.width,
+            trunk.node.label, trunk.node.text, trunk.text,
+            stringsAsFactors = FALSE
+        ),
+        names(d)
+    ), d)
+    class(d) <- c("plant", "data.frame")
+    if (isTRUE(plot)) plot(d, trunk.width = trunk.width, ...)
     return(d)
 }
 
@@ -173,118 +183,153 @@ germinate <- function(x, angle=15, trunk.width=20, middle='0', left='1', right='
 #' @param tree.rotation: tree rotation
 #' values = c(0, 90, 180) ~ (bottom-up, left-right, top-down)
 #' @param text.angle: text angle, if NULL then auto determine
-plot.plant <- function(x, trunk.width=20, add=FALSE,
-                       tree.rotation=180, text.angle=NULL,
-                       branch.width=1, branch.text.size=0.5,
-                       node.size=2, node.label.size=0.75,
-                       node.text.size=0.5, tree.label=NULL, ...) {
-
-    if(is.null(x)){message('ERROR: No tree to plot\n');return()}
+plot.plant <- function(x, trunk.width = 20, add = FALSE,
+                       tree.rotation = 180, text.angle = NULL,
+                       branch.width = 1, branch.text.size = 0.5,
+                       node.size = 2, node.label.size = 0.75,
+                       node.text.size = 0.5, tree.label = NULL, ...) {
+    if (is.null(x)) {
+        message("ERROR: No tree to plot\n")
+        return()
+    }
 
     # distance from node to its label
-    l = max(abs(c(x$y0, x$y1)))/30
-    r = 1
-    #print(tree.rotation)
-    if (tree.rotation == 90){
-        if (is.null(text.angle)){text.angle=90}
-        tmp = x$x0; x$x0=x$y0; x$y0=-tmp
-        tmp = x$x1; x$x1=x$y1; x$y1=-tmp
-    }else if (tree.rotation == 180){
-        r = -1
-        x$y0 = r*x$y0; x$y1 = r*x$y1
+    l <- max(abs(c(x$y0, x$y1))) / 30
+    r <- 1
+    # print(tree.rotation)
+    if (tree.rotation == 90) {
+        if (is.null(text.angle)) {
+            text.angle <- 90
+        }
+        tmp <- x$x0
+        x$x0 <- x$y0
+        x$y0 <- -tmp
+        tmp <- x$x1
+        x$x1 <- x$y1
+        x$y1 <- -tmp
+    } else if (tree.rotation == 180) {
+        r <- -1
+        x$y0 <- r * x$y0
+        x$y1 <- r * x$y1
     }
-    if (is.null(text.angle)){text.angle = 0}
-    #cat('text.angle = ', text.angle, '\n')
+    if (is.null(text.angle)) {
+        text.angle <- 0
+    }
+    # cat('text.angle = ', text.angle, '\n')
 
-    if(isTRUE(add)) {
-        with(x, segments(x0, y0, x1, y1, col=colors, lwd=pmax(trunk.width/nchar(x$branches), 1), ...))
+    if (isTRUE(add)) {
+        with(x, segments(x0, y0, x1, y1, col = colors, lwd = pmax(trunk.width / nchar(x$branches), 1), ...))
     } else {
-        if (tree.rotation == 90){
-            plot(c(x$x0-2*r, x$x1+1*r), c(x$y0, x$y1), type='n', asp=1, axes=FALSE, xlab='', ylab='', ...)
-        }else{
-            plot(c(x$x0, x$x1), c(x$y0, x$y1+2*r), type='n', asp=1, axes=FALSE, xlab='', ylab='', ...)
+        if (tree.rotation == 90) {
+            plot(c(x$x0 - 2 * r, x$x1 + 1 * r), c(x$y0, x$y1), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "", ...)
+        } else {
+            plot(c(x$x0, x$x1), c(x$y0, x$y1 + 2 * r), type = "n", asp = 1, axes = FALSE, xlab = "", ylab = "", ...)
         }
-        #with(x, segments(x0, y0, x1, y1, col=colors, lwd=pmax(trunk.width/nchar(x$branches), 1), ...))
-        #with(x, segments(x0, y0, x1, y1, col=branch.colors, lwd=branch.width, ...))
-        with(x, draw.branch(x0, y0, x1, y1, fill.color=branch.colors,
-                            border.color=branch.border.colors, border.linetype=branch.border.linetypes,
-                            border.width=branch.border.widths,
-                            w=branch.width, ...))
-        with(x, points(x1, y1, pch=21, col=node.border.colors,
-                       lwd=node.border.widths,
-                       bg=node.colors, cex=node.size, ...))
-        with(x, text(x1, y1, labels=node.labels, col='black', cex=node.label.size, srt=text.angle, ...))
-        if (tree.rotation == 90){
-            with(x, text(x1+l*r, y1, labels=node.texts, col='black', cex=node.text.size,
-                         srt=text.angle, ...))
-            if(!is.null(tree.label)){
-                text(x$x0[1]-2*l, x$y0[1], label=tree.label, cex=node.label.size, srt=text.angle)
+        # with(x, segments(x0, y0, x1, y1, col=colors, lwd=pmax(trunk.width/nchar(x$branches), 1), ...))
+        # with(x, segments(x0, y0, x1, y1, col=branch.colors, lwd=branch.width, ...))
+        with(x, draw.branch(x0, y0, x1, y1,
+            fill.color = branch.colors,
+            border.color = branch.border.colors, border.linetype = branch.border.linetypes,
+            border.width = branch.border.widths,
+            w = branch.width, ...
+        ))
+        with(x, points(x1, y1,
+            pch = 21, col = node.border.colors,
+            lwd = node.border.widths,
+            bg = node.colors, cex = node.size, ...
+        ))
+        with(x, text(x1, y1, labels = node.labels, col = "black", cex = node.label.size, srt = text.angle, ...))
+        if (tree.rotation == 90) {
+            with(x, text(x1 + l * r, y1,
+                labels = node.texts, col = "black", cex = node.text.size,
+                srt = text.angle, ...
+            ))
+            if (!is.null(tree.label)) {
+                text(x$x0[1] - 2 * l, x$y0[1], label = tree.label, cex = node.label.size, srt = text.angle)
             }
-        }else{
-            with(x, text(x1, y1+l*r, labels=node.texts, col='black', cex=node.text.size,
-                         srt=text.angle,...))
+        } else {
+            with(x, text(x1, y1 + l * r,
+                labels = node.texts, col = "black", cex = node.text.size,
+                srt = text.angle, ...
+            ))
         }
-        with(x, text((x0+x1)/2, (y0+y1)/2, labels=branch.texts, col='black',
-                     cex=branch.text.size, srt=text.angle, ...))
+        with(x, text((x0 + x1) / 2, (y0 + y1) / 2,
+            labels = branch.texts, col = "black",
+            cex = branch.text.size, srt = text.angle, ...
+        ))
     }
 }
 
 #' Draw tree branch using polygon that allows for
 #' choosing border style and fill
 #' @examples
-#' plot(x=c(0,30), y=c(0, 30));
+#' plot(x = c(0, 30), y = c(0, 30))
 #' \dontrun{
 #' draw.branch(c(5, 20, 12, 5, 5, 20),
-#'  c(5, 20, 10, 20, 25, 25),
-#'  c(10, 12, 20, 12, 10, 20),
-#'  c(12, 15, 5, 12, 25, 29),
-#'  border.linetype=c(1, 2, 3, 4,1,2),
-#'  border.width=c(1,2,1,2,2,2))
+#'     c(5, 20, 10, 20, 25, 25),
+#'     c(10, 12, 20, 12, 10, 20),
+#'     c(12, 15, 5, 12, 25, 29),
+#'     border.linetype = c(1, 2, 3, 4, 1, 2),
+#'     border.width = c(1, 2, 1, 2, 2, 2)
+#' )
 #' }
-draw.branch <- function(x0, y0, x1, y1, w=1, border.color='black', border.linetype='solid', border.width=0.5, fill.color=NULL, ...){
-    X0 = x0; Y0=y0; X1=x1; Y1=y1
-    #print(w)
-    w = w/2
-    #cat('w===', w, '\n')
-    #arrows(x0, y0, x1, y1, col='red')
-    n = length(x0)
-    if (length(border.color) == 1){border.color = rep(border.color, n)}
-    if (length(fill.color) == 1){fill.color = rep(fill.color, n)}
-    if (length(border.linetype) == 1){border.linetype = rep(border.linetype, n)}
-    if (length(border.width) == 1){border.width = rep(border.width, n)}
-    for (i in 1:length(X0)){
-        x0 = X0[i]; y0 = Y0[i]; x1 = X1[i]; y1 = Y1[i]
+draw.branch <- function(x0, y0, x1, y1, w = 1, border.color = "black", border.linetype = "solid", border.width = 0.5, fill.color = NULL, ...) {
+    X0 <- x0
+    Y0 <- y0
+    X1 <- x1
+    Y1 <- y1
+    # print(w)
+    w <- w / 2
+    # cat('w===', w, '\n')
+    # arrows(x0, y0, x1, y1, col='red')
+    n <- length(x0)
+    if (length(border.color) == 1) {
+        border.color <- rep(border.color, n)
+    }
+    if (length(fill.color) == 1) {
+        fill.color <- rep(fill.color, n)
+    }
+    if (length(border.linetype) == 1) {
+        border.linetype <- rep(border.linetype, n)
+    }
+    if (length(border.width) == 1) {
+        border.width <- rep(border.width, n)
+    }
+    for (i in 1:length(X0)) {
+        x0 <- X0[i]
+        y0 <- Y0[i]
+        x1 <- X1[i]
+        y1 <- Y1[i]
         # don't need to catch for atan(Inf), still works
-        #if(x0 == x1){
+        # if(x0 == x1){
         #    a = pi/2
-        #}else{
-        a = atan((y1-y0)/(x1-x0))
-        #}
-        x01 = x0 - sin(a)*w
-        x02 = x0 + sin(a)*w
-        y01 = y0 + cos(a)*w
-        y02 = y0 - cos(a)*w
-        x11 = x1 + sin(a)*w
-        x12 = x1 - sin(a)*w
-        y11 = y1 - cos(a)*w
-        y12 = y1 + cos(a)*w
-        xx = c(x01, x02, x11, x12, x01)
-        yy =  c(y01, y02, y11, y12, y01)
-        #print(xx)
-        #print(yy)
-        polygon(xx, yy, col=fill.color[i], border=border.color[i], lty=border.linetype[i], lwd=border.width[i])
+        # }else{
+        a <- atan((y1 - y0) / (x1 - x0))
+        # }
+        x01 <- x0 - sin(a) * w
+        x02 <- x0 + sin(a) * w
+        y01 <- y0 + cos(a) * w
+        y02 <- y0 - cos(a) * w
+        x11 <- x1 + sin(a) * w
+        x12 <- x1 - sin(a) * w
+        y11 <- y1 - cos(a) * w
+        y12 <- y1 + cos(a) * w
+        xx <- c(x01, x02, x11, x12, x01)
+        yy <- c(y01, y02, y11, y12, y01)
+        # print(xx)
+        # print(yy)
+        polygon(xx, yy, col = fill.color[i], border = border.color[i], lty = border.linetype[i], lwd = border.width[i])
 
-        if (x0 > x1){
-            #rect
+        if (x0 > x1) {
+            # rect
 
             # nice
-            #polygon(c(x0, x0-b, x1, x1, x1+b, x0, x0), c(y0, y0, y1-b, y1, y1, y0+b, y0), ...)
-        }else{
+            # polygon(c(x0, x0-b, x1, x1, x1+b, x0, x0), c(y0, y0, y1-b, y1, y1, y0+b, y0), ...)
+        } else {
             # nice
-            #polygon(c(x0, x0+b, x1, x1, x1-b, x0, x0), c(y0, y0, y1-b, y1, y1, y0+b, y0), ...)
+            # polygon(c(x0, x0+b, x1, x1, x1-b, x0, x0), c(y0, y0, y1-b, y1, y1, y0+b, y0), ...)
         }
     }
-
 }
 
 
@@ -298,13 +343,17 @@ draw.branch <- function(x0, y0, x1, y1, w=1, border.color='black', border.linety
 fertilise <- function(size, n) {
     size <- as.integer(size)
     n <- as.integer(n)
-    if(size > 25L || size < 3L) stop("Size out of valid range. ",
-                                     "'max.depth' must be in the range [3, 25].")
+    if (size > 25L || size < 3L) {
+        stop(
+            "Size out of valid range. ",
+            "'max.depth' must be in the range [3, 25]."
+        )
+    }
 
     # Generate integer pool and weights
 
     size0 <- size - 1L
-    pool.raw <- seq.int(2L ^ size) - 1L
+    pool.raw <- seq.int(2L^size) - 1L
     pool.raw.len <- valid.unique <- length(pool.raw)
 
     # weights are a function of how many trailing zeroes each number has, for
@@ -312,8 +361,9 @@ fertilise <- function(size, n) {
     # `10`, and `1`, so it should be weighed 4x
 
     weights <- rep(1L, pool.raw.len)
-    for(i in seq.int(size0))
-        weights[seq.int(from=1L, to=pool.raw.len, by=2 ^ i)] <- i + 1L
+    for (i in seq.int(size0)) {
+        weights[seq.int(from = 1L, to = pool.raw.len, by = 2^i)] <- i + 1L
+    }
 
     # Create indices to map from the "weighted" vectors to the original
     # vectors
@@ -334,20 +384,20 @@ fertilise <- function(size, n) {
     # Generate our encoded vectors by right padding with enough zeros and then
     # adding as a value the number of zeros to the padded area
 
-    zero.pad <- as.integer(2L ^ ceiling(log2(size)))
+    zero.pad <- as.integer(2L^ceiling(log2(size)))
     vals.enc.init <- pool.vals * zero.pad + zeros.imp - 1L
 
     # Results tracking
 
-    res <- matrix(0L, nrow=n, ncol=2L)
-    res[, 2L] <- size      # leads to "" if not changed
-    max.allowed <- size0   # how padded a number to pick can be
+    res <- matrix(0L, nrow = n, ncol = 2L)
+    res[, 2L] <- size # leads to "" if not changed
+    max.allowed <- size0 # how padded a number to pick can be
     free <- free.init <- rep(TRUE, pool.len)
 
     # Pre compute frequently used sequences and number patterns
 
-    zero.mx <- as.integer(2 ^ (size - seq(size))) *
-        !lower.tri(matrix(ncol=size, nrow=size))
+    zero.mx <- as.integer(2^(size - seq(size))) *
+        !lower.tri(matrix(ncol = size, nrow = size))
     seqs <- lapply(1L:size, seq.int)
     seqs0 <- lapply(seqs, `-`, 1L)
     seq.rev <- rev(seq.int(size))
@@ -359,34 +409,37 @@ fertilise <- function(size, n) {
     # Setup our pool to draw blindly (i.e. without checking disqualification);
 
     blind.i <- 1L
-    blind.len <- min(n * 3L, pool.len)        # should most likely get enough values in this draw
+    blind.len <- min(n * 3L, pool.len) # should most likely get enough values in this draw
     blind.pool <- sample(vals.enc.init, blind.len)
 
     # Loop through the `n` requested samples
 
-    for(i in seq.int(n)) {
+    for (i in seq.int(n)) {
         # Check for completeness, and remove values that would lead to incomplete
         # pools.  We only remove padded values so `valid.unique` is unchanged
 
-        if(max.allowed) {
-            rem.pow <- which(n - i >= valid.unique - 2L ^ seqs[[max.allowed]])
-            for(j in rev.default(rem.pow)) {
+        if (max.allowed) {
+            rem.pow <- which(n - i >= valid.unique - 2L^seqs[[max.allowed]])
+            for (j in rev.default(rem.pow)) {
                 to.rem <- which(pad.imp == max.allowed)
                 free[to.rem] <- FALSE
                 max.allowed <- max.allowed - 1L
             }
-            if(!max.allowed && n - i >= valid.unique)
+            if (!max.allowed && n - i >= valid.unique) {
                 stop(
                     "Logic Error: pool is not large enough to support complete samples"
-                ) }
+                )
+            }
+        }
         # Pick from our shuffled pool; after we pick, if turns out value is
         # disqualified, pick again until we find a non-picked value.  Infer from
         # encoding where that value is in our original sorted list
 
         repeat {
-            if(blind.i > blind.len) {  # Initial sample set not enough, add more
+            if (blind.i > blind.len) {
+                # Initial sample set not enough, add more
                 which.free <- which(free)
-                if(!length(which.free)) stop("Error: ran out of pool to sample")
+                if (!length(which.free)) stop("Error: ran out of pool to sample")
                 blind.len <- min(length(which.free), blind.len)
                 blind.pool <- sample(vals.enc.init[which.free], blind.len)
                 blind.i <- 1L
@@ -395,7 +448,7 @@ fertilise <- function(size, n) {
             val <- val.enc %/% zero.pad
             enc <- val.enc %% zero.pad
             blind.idx <- pool.lu[[val + 1L]] + enc
-            if(free[[blind.idx]]) break
+            if (free[[blind.idx]]) break
             blind.i <- blind.i + 1L
         }
         # Figure out how many trailing zeros our number has (recall, this is
@@ -413,25 +466,28 @@ fertilise <- function(size, n) {
         # to disqualify (NOTE: different than withbin, here we get the next value
         # greater than our range because `free` is always same size)
 
-        disq.hi.enc <- as.integer((val + 2L ^ pad)) * zero.pad
+        disq.hi.enc <- as.integer((val + 2L^pad)) * zero.pad
 
         # Incremental disqualification of smaller patterns by computing the
         # decimal value from a sequantially truncated bit matrix
 
-        disq.loc.extra <- if(zeros) {
+        disq.loc.extra <- if (zeros) {
             seq.z <- seqs[[zeros]]
             disqual.more.tmp <- as.integer(
                 ones[seq.z] %*% (
                     as.integer(intToBits(val)[seq.rev])[seq.z] *
-                        zero.mx[seq.z, seq.z, drop=FALSE]
-                ) )
+                        zero.mx[seq.z, seq.z, drop = FALSE]
+                )
+            )
             ws <- weights[disqual.more.tmp + 1L]
             offset <- seqs0[[zeros]] + ws - size
             disq.loc <- pool.lu[disqual.more.tmp + 1L] + offset
             disqualifiable <- which(disqual.more.tmp < val)
             valid.unique <- valid.unique - sum(!(ws - offset - 1L)[disqualifiable])
             unique.default(disq.loc[disqualifiable])
-        } else integer()
+        } else {
+            integer()
+        }
 
         # Find values to remove, first with the range of values disqualified by our
         # pick
@@ -441,18 +497,19 @@ fertilise <- function(size, n) {
 
         free[
             seq.int(
-                from=pool.lu[[lo]],
-                to=max(pool.lu[[lo]], pool.lu[[hi - 1L]] + weights[[hi - 1L]] - 1L)
-            ) ] <- FALSE
+                from = pool.lu[[lo]],
+                to = max(pool.lu[[lo]], pool.lu[[hi - 1L]] + weights[[hi - 1L]] - 1L)
+            )
+        ] <- FALSE
 
         # Now remove any parent values
 
         free[disq.loc.extra] <- FALSE
-        valid.unique <- valid.unique - 2 ^ pad
+        valid.unique <- valid.unique - 2^pad
     }
     # Now convert to binary representation; note we assume ints are 32 bits
 
-    res.raw <- matrix(as.integer(intToBits(res[, 1L])), nrow=32L)[seq.rev, ]
+    res.raw <- matrix(as.integer(intToBits(res[, 1L])), nrow = 32L)[seq.rev, ]
     substr(do.call(paste0, split(res.raw, row(res.raw))), 0L, size - res[, 2L])
 }
 
@@ -460,6 +517,8 @@ fertilise <- function(size, n) {
 # from a given origin.
 get.xy <- function(a, d, x0, y0) {
     a <- ifelse(a <= 90, 90 - a, 450 - a)
-    data.frame(x = x0 + d * cos(a / 180 * pi),
-               y = y0 + d * sin(a / 180 * pi))
+    data.frame(
+        x = x0 + d * cos(a / 180 * pi),
+        y = y0 + d * sin(a / 180 * pi)
+    )
 }

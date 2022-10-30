@@ -15,7 +15,7 @@ Imports: stats, graphics, grDevices, utils, methods, base, ggplot2
 License: GPL-3 | file LICENSE
 LazyData: true
 Suggests: knitr, rmarkdown, grid, gridBase, gridExtra, reshape2,
-          igraph, packcircles, metap, truncnorm
+          igraph, packcircles, metap, truncnorm, dplyr
 VignetteBuilder: knitr
 biocViews: Software, StatisticalMethod, DNASeq, WholeGenome, ExomeSeq,
            Visualization, Genetics, SomaticMutation

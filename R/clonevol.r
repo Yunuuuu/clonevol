@@ -2208,7 +2208,9 @@ infer.clonal.models <- function(c=NULL, variants=NULL,
 
     # convert cluster column to character (allow both number and string as
     # cluster or clone IDs)
-    founding.cluster = as.character(founding.cluster)
+    if (is.null(founding.cluster)) {
+        founding.cluster = as.character(founding.cluster)
+    }
     if (!is.null(c)) {
         c[[cluster.col.name]] = as.character(c[[cluster.col.name]])
     }

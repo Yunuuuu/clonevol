@@ -2672,10 +2672,14 @@ infer.clonal.models <- function(c = NULL, variants = NULL,
         results$matched$probs[[added_vaf_col]] <- NULL
         results$matched$clone.ccf.pvalues[[added_vaf_col]] <- NULL
 
-        results$matched[c("merged.trees", "trimmed.merged.trees")] <- lapply(results$matched[c("merged.trees", "trimmed.merged.trees")], function(tree_list) { # nolint
+        results$matched[c("merged.trees", "trimmed.merged.trees")] <- lapply(results$matched[c("merged.trees", "trimmed.merged.trees")], function(tree_list) {
             lapply(tree_list, function(x) {
                 dplyr::mutate(x, dplyr::across(
-                    c(sample, sample.with.cell.frac.ci, sample.with.nonzero.cell.frac.ci, sample.with.nonzero.cell.frac.noci, samples.with.nonzero.cell.frac), # nolint
+                    c(
+                        sample, sample.with.cell.frac.ci,
+                        sample.with.nonzero.cell.frac.ci,
+                        sample.with.nonzero.cell.frac.noci
+                    ),
                     function(comma_chr) {
                         vapply(
                             strsplit(comma_chr, ","),
@@ -2685,7 +2689,8 @@ infer.clonal.models <- function(c = NULL, variants = NULL,
                 ))
             })
         })
-        results$params <- setdiff(vaf.col.names, added_vaf_col)
+        results$boot[[added_vaf_col]] <- NULL
+        results$params$vaf.col.names <- setdiff(vaf.col.names, added_vaf_col)
     }
     return(results)
 }
